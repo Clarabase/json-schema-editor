@@ -4,6 +4,7 @@
   "private": true,
   "homepage": "https://json-schema.clarabase.com",
   "dependencies": {
+    "@faker-js/faker": "^9.2.0",
     "@radix-ui/react-checkbox": "^1.1.2",
     "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-select": "^2.1.2",

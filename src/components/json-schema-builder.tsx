@@ -19,6 +19,7 @@ import { Textarea } from "../components/ui/textarea";
 import { Checkbox } from "../components/ui/checkbox";
 import { PlusCircle, X } from "lucide-react";
 import { exportSchema, ExportFormat } from "../lib/exporters/export";
+import { seedSchema } from "../lib/seeder";
 
 type FieldType = "string" | "number" | "boolean" | "array" | "object" | "enum";
 
@@ -89,10 +90,13 @@ export function JsonSchemaBuilder() {
   });
   const [schema, setSchema] = useState<string>("");
   const [newEnumValue, setNewEnumValue] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"json" | "remove">("json");
+  const [activeTab, setActiveTab] = useState<"json" | "remove" | "generate">(
+    "json"
+  );
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [schemaName, setSchemaName] = useState<string>("");
   const [exportFormat, setExportFormat] = useState<string>("");
+  const [sampleDataCount, setSampleDataCount] = useState<number>(1);
 
   const resetCurrentField = () => ({
     name: "",
@@ -415,6 +419,23 @@ export function JsonSchemaBuilder() {
     URL.revokeObjectURL(url);
   };
 
+  const generateSampleData = () => {
+    const sampleData = seedSchema(JSON.parse(schema), {
+      count: sampleDataCount,
+    });
+    const blob = new Blob([JSON.stringify(sampleData, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${(schemaName || "example").toLowerCase()}-sample.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Card className="w-full max-w-3xl mx-auto bg-white dark:bg-gray-800">
       <CardHeader>
@@ -444,9 +465,22 @@ export function JsonSchemaBuilder() {
             >
               validator
             </a>
-            . You can add and remove fields, and download the schema once you
-            are ready. You can also export the schema into one of the supported
-            export formats such as SQL, GraphQL, or Protobuf.
+            . In addition, you can:
+            <ul className="list-disc pl-5 space-y-1">
+              <li className="text-gray-700 dark:text-gray-300">
+                Add and remove fields
+              </li>
+              <li className="text-gray-700 dark:text-gray-300">
+                Download the schema
+              </li>
+              <li className="text-gray-700 dark:text-gray-300">
+                Export the schema into one of the supported export formats such
+                as SQL, GraphQL, or Protobuf
+              </li>
+              <li className="text-gray-700 dark:text-gray-300">
+                Generate sample data from the schema
+              </li>
+            </ul>
           </div>
           <hr className="my-4 border-gray-300 dark:border-gray-700" />
           <div>
@@ -532,7 +566,7 @@ export function JsonSchemaBuilder() {
             <div className="flex space-x-4 border-b-2 mb-4">
               <div
                 onMouseDown={() => setActiveTab("json")}
-                className={`w-1/2 py-2 text-center ${
+                className={`w-1/3 py-2 text-center ${
                   activeTab === "json"
                     ? "border-b-2 border-blue-500 text-blue-500"
                     : "text-gray-500"
@@ -542,13 +576,23 @@ export function JsonSchemaBuilder() {
               </div>
               <div
                 onMouseDown={() => setActiveTab("remove")}
-                className={`w-1/2 py-2 text-center ${
+                className={`w-1/3 py-2 text-center ${
                   activeTab === "remove"
                     ? "border-b-2 border-blue-500 text-blue-500"
                     : "text-gray-500"
                 }`}
               >
                 Remove Fields
+              </div>
+              <div
+                onMouseDown={() => setActiveTab("generate")}
+                className={`w-1/3 py-2 text-center ${
+                  activeTab === "generate"
+                    ? "border-b-2 border-blue-500 text-blue-500"
+                    : "text-gray-500"
+                }`}
+              >
+                Generate Sample Data
               </div>
             </div>
             {activeTab === "json" ? (
@@ -560,7 +604,7 @@ export function JsonSchemaBuilder() {
                   className="h-40 font-mono"
                 />
               </div>
-            ) : (
+            ) : activeTab === "remove" ? (
               <div className="space-y-2">
                 <div className="h-40 overflow-y-auto border p-2">
                   {fields.map((field) => (
@@ -580,6 +624,32 @@ export function JsonSchemaBuilder() {
                     </div>
                   ))}
                 </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="sampleDataCount">Number of Samples</Label>
+                  <Input
+                    id="sampleDataCount"
+                    type="number"
+                    min={1}
+                    max={25}
+                    value={sampleDataCount}
+                    onChange={(e) =>
+                      setSampleDataCount(
+                        Math.min(25, Math.max(1, parseInt(e.target.value)))
+                      )
+                    }
+                  />
+                </div>
+                <Button
+                  onClick={generateSampleData}
+                  variant="secondary"
+                  className="bg-blue-200 hover:bg-blue-300 w-full"
+                  disabled={!schema}
+                >
+                  Generate
+                </Button>
               </div>
             )}
           </div>
