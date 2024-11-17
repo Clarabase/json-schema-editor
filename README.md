@@ -1,6 +1,6 @@
 # JSON Schema Editor
 
-The [JSON Schema Editor](https://json-schema.org) is a tool that provides a UI for creating and editing JSON Schema. You can download the JSON Schema as a JSON file and use it in your projects.
+The [JSON Schema](https://json-schema.org) editor is a tool that provides a UI for creating and editing JSON Schema. You can download the JSON Schema as a JSON file and use it in your projects.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
