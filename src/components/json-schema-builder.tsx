@@ -18,6 +18,7 @@ import {
 import { Textarea } from "../components/ui/textarea";
 import { Checkbox } from "../components/ui/checkbox";
 import { PlusCircle, X } from "lucide-react";
+import { exportSchema, ExportFormat } from "../lib/exporters/export";
 
 type FieldType = "string" | "number" | "boolean" | "array" | "object" | "enum";
 
@@ -91,6 +92,7 @@ export function JsonSchemaBuilder() {
   const [activeTab, setActiveTab] = useState<"json" | "remove">("json");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [schemaName, setSchemaName] = useState<string>("");
+  const [exportFormat, setExportFormat] = useState<string>("");
 
   const resetCurrentField = () => ({
     name: "",
@@ -400,27 +402,42 @@ export function JsonSchemaBuilder() {
     setSchemaName("");
   };
 
+  const handleExport = (format: ExportFormat) => {
+    const exportedData = exportSchema(schema, format as ExportFormat);
+    const blob = new Blob([exportedData], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${(schemaName || "example").toLowerCase()}.${format}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <Card className="w-full max-w-3xl mx-auto bg-white">
+    <Card className="w-full max-w-3xl mx-auto bg-white dark:bg-gray-800">
       <CardHeader>
-        <CardTitle>JSON Schema Builder</CardTitle>
+        <CardTitle className="text-black dark:text-white">
+          JSON Schema Builder
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="font-mono bg-gray-100 p-4 rounded-md">
+          <div className="font-mono bg-gray-100 dark:bg-gray-900 p-4 rounded-md text-black dark:text-white">
             The JSON Schema Editor is a tool to help you create and edit JSON
             Schema. It is based on the{" "}
             <a
-              className="text-blue-500 font-bold underline hover:text-blue-600 transition-colors"
+              className="text-blue-500 dark:text-blue-300 font-bold underline hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               href="https://json-schema.org/"
               target="_blank"
               rel="noreferrer"
             >
               JSON Schema Specification
-            </a>{" "}
+            </a>
             . JSON schema can be validated with a schema{" "}
             <a
-              className="text-blue-500 font-bold underline hover:text-blue-600 transition-colors"
+              className="text-blue-500 dark:text-blue-300 font-bold underline hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               href="https://json-schema.org/tools?query=&sortBy=name&sortOrder=ascending&groupBy=toolingTypes&licenses=&languages=&drafts=&toolingTypes=validator&environments="
               target="_blank"
               rel="noreferrer"
@@ -428,16 +445,20 @@ export function JsonSchemaBuilder() {
               validator
             </a>
             . You can add and remove fields, and download the schema once you
-            are ready.
+            are ready. You can also export the schema into one of the supported
+            export formats such as SQL, GraphQL, or Protobuf.
           </div>
-          <hr className="my-4" />
+          <hr className="my-4 border-gray-300 dark:border-gray-700" />
           <div>
-            <Label htmlFor="schemaName">Schema Name</Label>
+            <Label htmlFor="schemaName" className="text-black dark:text-white">
+              Schema Name
+            </Label>
             <Input
               id="schemaName"
               value={schemaName}
               onChange={(e) => setSchemaName(e.target.value)}
               placeholder="Enter schema name"
+              className="bg-white dark:bg-gray-700 text-black dark:text-white"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -567,16 +588,54 @@ export function JsonSchemaBuilder() {
               onClick={resetSchema}
               variant="secondary"
               className="bg-red-200 hover:bg-red-300 w-1/4"
+              disabled={fields.length === 0}
             >
               Reset Schema
             </Button>
-            <Button
-              onClick={downloadSchema}
-              variant="secondary"
-              className="bg-green-200 hover:bg-green-300 w-1/4"
-            >
-              Download Schema
-            </Button>
+            <div className="flex space-x-2">
+              <div className="relative">
+                <Button
+                  onClick={() =>
+                    setExportFormat((prev) => (prev ? "" : "open"))
+                  }
+                  variant="secondary"
+                  className="bg-blue-200 hover:bg-blue-300 w-full"
+                  disabled={fields.length === 0}
+                >
+                  Export As
+                </Button>
+                {exportFormat && (
+                  <div className="absolute bottom-full mb-2 w-48 bg-white border rounded shadow-lg">
+                    <div
+                      onClick={() => handleExport("sql")}
+                      className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                    >
+                      SQL
+                    </div>
+                    <div
+                      onClick={() => handleExport("gql")}
+                      className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                    >
+                      GraphQL
+                    </div>
+                    <div
+                      onClick={() => handleExport("proto")}
+                      className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+                    >
+                      Protobuf
+                    </div>
+                  </div>
+                )}
+              </div>
+              <Button
+                onClick={downloadSchema}
+                variant="secondary"
+                className="bg-green-200 hover:bg-green-300 w-full"
+                disabled={fields.length === 0}
+              >
+                Download Schema
+              </Button>
+            </div>
           </div>
         </div>
       </CardContent>
